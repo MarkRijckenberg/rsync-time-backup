@@ -199,10 +199,11 @@ while : ; do
 	fn_log_info "To:   $DEST"
 
 	CMD="rsync"
-	# added 9 extra options here: ->
+	# added 10 extra options here: ->
 	CMD="$CMD --exclude='.*'"
 	CMD="$CMD --exclude '.gvfs'"
         CMD="$CMD --exclude '.cache/'"
+        CMD="$CMD --exclude '4hYAVONLqm/'"
         CMD="$CMD --exclude 'maven/'"
         CMD="$CMD --exclude 'R/'"
         CMD="$CMD --exclude 'rstudio/'"
