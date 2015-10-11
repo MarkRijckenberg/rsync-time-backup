@@ -199,12 +199,12 @@ while : ; do
 	fn_log_info "To:   $DEST"
 
 	CMD="rsync"
-	# added 4 extra options here: ->
+	# added 6 extra options here: ->
 	CMD="$CMD --exclude='.*'"
-	CMD="$CMD --exclude "$HOME.gvfs""
-        CMD="$CMD --exclude "$HOME/.cache/""
-        CMD="$CMD --exclude "$HOME/R/""
-        CMD="$CMD --exclude "$HOME/rstudio/""
+	CMD="$CMD --exclude '.gvfs'"
+        CMD="$CMD --exclude '.cache/'"
+        CMD="$CMD --exclude 'R/'"
+        CMD="$CMD --exclude 'rstudio/'"
 	CMD="$CMD --max-size='100M'"
 	# end of extra options here <------
 	CMD="$CMD --compress"
