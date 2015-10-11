@@ -203,6 +203,8 @@ while : ; do
 	CMD="$CMD --exclude='.*'"
 	CMD="$CMD --exclude "$HOME.gvfs""
         CMD="$CMD --exclude "$HOME/.cache/""
+        CMD="$CMD --exclude "$HOME/R/""
+        CMD="$CMD --exclude "$HOME/rstudio/""
 	CMD="$CMD --max-size='100M'"
 	# end of extra options here <------
 	CMD="$CMD --compress"
