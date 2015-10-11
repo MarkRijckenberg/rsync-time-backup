@@ -199,12 +199,14 @@ while : ; do
 	fn_log_info "To:   $DEST"
 
 	CMD="rsync"
-	# added 7 extra options here: ->
+	# added 9 extra options here: ->
 	CMD="$CMD --exclude='.*'"
 	CMD="$CMD --exclude '.gvfs'"
         CMD="$CMD --exclude '.cache/'"
+        CMD="$CMD --exclude 'maven/'"
         CMD="$CMD --exclude 'R/'"
         CMD="$CMD --exclude 'rstudio/'"
+        CMD="$CMD --exclude 'spark/'"
 	CMD="$CMD --max-size='100M'"
 	CMD="$CMD --exclude-from='/home/ulysses/shell-scripts/exclude_me.txt'"
 	# end of extra options here <------
