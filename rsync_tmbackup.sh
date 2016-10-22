@@ -32,11 +32,13 @@ trap 'fn_terminate_script' SIGINT
 # Small utility functions for reducing code duplication
 # -----------------------------------------------------------------------------
 fn_display_usage() {
-	fn_log_info "Usage : $(basename $0) [args] <source> <[user@host:]destination> [exclude-pattern-file]"
-	fn_log_info ""
-	fn_log_info "Options:"
-	fn_log_info "-p, --port     SSH port"
-	fn_log_info "-h, --help     Display this help message"
+	echo "Usage: $(basename $0) [OPTION]... <SOURCE> <[USER@HOST:]DESTINATION> [exclude-pattern-file]"
+	echo ""
+	echo "Options"
+	echo " -p, --port           SSH port."
+	echo " -h, --help           Display this help message."
+	echo " --rsync-get-flags    Display the default rsync flags that are used for backup."
+	echo " --rsync-set-flags    Set the rsync flags that are going to be used for backup."
 }
 
 fn_parse_date() {
@@ -45,6 +47,7 @@ fn_parse_date() {
 		linux*) date -d "${1:0:10} ${1:11:2}:${1:13:2}:${1:15:2}" +%s ;;
 		cygwin*) date -d "${1:0:10} ${1:11:2}:${1:13:2}:${1:15:2}" +%s ;;
 		darwin*) date -j -f "%Y-%m-%d-%H%M%S" "$1" "+%s" ;;
+		FreeBSD*) date -j -f "%Y-%m-%d-%H%M%S" "$1" "+%s" ;;
 	esac
 }
 
@@ -85,27 +88,27 @@ fn_run_cmd() {
 }
 
 fn_find() {
-	fn_run_cmd "find $1"  2>/dev/null
+	fn_run_cmd "find '$1'"  2>/dev/null
 }
 
 fn_get_absolute_path() {
-	fn_run_cmd "cd $1;pwd"
+	fn_run_cmd "cd '$1';pwd"
 }
 
 fn_mkdir() {
-	fn_run_cmd "mkdir -p -- $1"
+	fn_run_cmd "mkdir -p -- '$1'"
 }
 
 fn_rm() {
-	fn_run_cmd "rm -rf -- $1"
+	fn_run_cmd "rm -rf -- '$1'"
 }
 
 fn_touch() {
-	fn_run_cmd "touch -- $1"
+	fn_run_cmd "touch -- '$1'"
 }
 
 fn_ln() {
-	fn_run_cmd "ln -s -- $1 $2"
+	fn_run_cmd "ln -s -- '$1' '$2'"
 }
 
 # -----------------------------------------------------------------------------
@@ -122,6 +125,8 @@ SRC_FOLDER=""
 DEST_FOLDER=""
 EXCLUSION_FILE=""
 
+RSYNC_FLAGS="-D --compress --numeric-ids --links --hard-links --one-file-system --itemize-changes --times --recursive --perms --owner --group"
+
 while :; do
 	case $1 in
 		-h|-\?|--help)
@@ -131,6 +136,15 @@ while :; do
 		-p|--port)
 			shift
 			SSH_PORT=$1
+			;;
+		--rsync-get-flags)
+			shift
+			echo $RSYNC_FLAGS
+			exit
+			;;
+		--rsync-set-flags)
+			shift
+			RSYNC_FLAGS="$1"
 			;;
 		--)
 			shift
@@ -321,15 +335,9 @@ while : ; do
 	if [ -n "$SSH_CMD" ]; then
 		CMD="$CMD  -e 'ssh -p $SSH_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
 	fi
-	CMD="$CMD --compress"
-	CMD="$CMD --numeric-ids"
-	CMD="$CMD --links"
-	CMD="$CMD --hard-links"
-	CMD="$CMD --one-file-system"
-	CMD="$CMD --archive"
-	CMD="$CMD --itemize-changes"
-	CMD="$CMD --verbose"
-	# added 10 extra options here: ->
+	CMD="$CMD $RSYNC_FLAGS"
+	
+        # added 10 extra options here: ->
 	CMD="$CMD --exclude='.*'"
 	CMD="$CMD --exclude '.gvfs'"
         CMD="$CMD --exclude '.cache/'"
