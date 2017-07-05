@@ -1,16 +1,27 @@
 # Rsync time backup
 
-Time Machine style backup with rsync. Should work on Linux, OS X and Windows with Cygwin. The main advantage over Time Machine is the flexibility as it can backup from/to any filesystem and works on any platform. You can also backup, for example, to a Truecrypt drive without any problem.
+This script offers Time Machine-style backup using rsync. It creates incremental backups of files and directories to the destination of your choice. The backups are structured in a way that makes it easy to recover any file at any point in time.
 
-On OS X, it has a few disadvantages compared to Time Machine - in particular it doesn't auto-start when the backup drive is plugged (though it can be achieved using a launch agent), it requires some knowledge of the command line, and no specific GUI is provided to restore files. Instead files can be restored by using any file explorer, including Finder, or the command line.
+It works on Linux, macOS and Windows (via WSL or Cygwin). The main advantage over Time Machine is the flexibility as it can backup from/to any filesystem and works on any platform. You can also backup, for example, to a Truecrypt drive without any problem.
 
-# Installation
+On macOS, it has a few disadvantages compared to Time Machine - in particular it does not auto-start when the backup drive is plugged (though it can be achieved using a launch agent), it requires some knowledge of the command line, and no specific GUI is provided to restore files. Instead files can be restored by using any file explorer, including Finder, or the command line.
+
+## Installation
 
 	git clone https://github.com/laurent22/rsync-time-backup
 
-# Usage
+## Usage
 
-	rsync_tmbackup.sh <source> <destination> [excluded-pattern-path]
+	Usage: rsync_tmbackup.sh [OPTION]... <SOURCE> <[USER@HOST:]DESTINATION> [exclude-pattern-file]
+
+	Options
+	 -p, --port           SSH port.
+	 -h, --help           Display this help message.
+	 --rsync-get-flags    Display the default rsync flags that are used for backup.
+	 --rsync-set-flags    Set the rsync flags that are going to be used for backup.
+	 --log-dir            Set the log file directory. If this flag is set, generated files will
+	                      not be managed by the script - in particular they will not be
+	                      automatically deleted.
 
 ## Examples
 	
@@ -21,14 +32,43 @@ On OS X, it has a few disadvantages compared to Time Machine - in particular it 
 * Backup with exclusion list:
 	
 		rsync_tmbackup.sh /home /mnt/backup_drive excluded_patterns.txt
-	
+
+* Backup to remote drive over SSH, on port 2222:
+
+		rsync_tmbackup.sh -p 2222 /home user@example.com:/mnt/backup_drive
+
+* To mimic Time Machine's behaviour, a cron script can be setup to backup at regular interval. For example, the following cron job checks if the drive "/mnt/backup" is currently connected and, if it is, starts the backup. It does this check every 1 hour.
+
+		0 */1 * * * if [[ -d /mnt/backup ]]; then rsync_tmbackup.sh /home /mnt/backup; fi
+
+## Backup expiration logic
+
+The script automatically deletes old backups using the following logic:
+- Within the last 24 hours, all the backups are kept.
+- Within the last 31 days, the most recent backup of each day is kept.
+- After 31 days, only the most recent backup of each month is kept.
+- Additionally, if the backup destination directory is full, the oldest backups are deleted until enough space is available.
+
 ## Exclude file
 
-An optional exclude file can be provided as a third parameter. It should be compatible with the `--exclude-from` parameter of rsync. See [this tutorial] (https://sites.google.com/site/rsync2u/home/rsync-tutorial/the-exclude-from-option) for more information.
+An optional exclude file can be provided as a third parameter. It should be compatible with the `--exclude-from` parameter of rsync. See [this tutorial](https://sites.google.com/site/rsync2u/home/rsync-tutorial/the-exclude-from-option) for more information.
 
-# Features
+## Built-in lock
+
+The script is designed so that only one backup operation can be active for a given directory. If a new backup operation is started while another is still active (i.e. it has not finished yet), the new one will be automaticalled interrupted. Thanks to this the use of `flock` to run the script is not necessary.
+
+## Rsync options
+
+To display the rsync options that are used for backup, run `./rsync_tmbackup.sh --rsync-get-flags`. It is also possible to add or remove options using the `--rsync-set-flags` option. For example, to exclude backing up permissions and groups:
+
+	rsync_tmbackup --rsync-set-flags "--numeric-ids --links --hard-links \
+	--one-file-system --archive --no-perms --no-groups --itemize-changes" /src /dest
+
+## Features
 
 * Each backup is on its own folder named after the current timestamp. Files can be copied and restored directly, without any intermediate tool.
+
+* Backup to remote destinations over SSH.
 
 * Files that haven't changed from one backup to the next are hard-linked to the previous backup so take very little extra space.
 
@@ -42,21 +82,17 @@ An optional exclude file can be provided as a third parameter. It should be comp
 
 * "latest" symlink that points to the latest successful backup.
 
-* The application is just one bash script that can be easily edited.
+## TODO
 
-# TODO
-
-* Check source and destination file-system. If one of them is FAT, use the --modify-window rsync parameter (see `man rsync`) with a value of 1 or 2.
-
+* Check source and destination file-system (`df -T /dest`). If one of them is FAT, use the --modify-window rsync parameter (see `man rsync`) with a value of 1 or 2
+* Add `--whole-file` arguments on Windows? See http://superuser.com/a/905415/73619
 * Minor changes (see TODO comments in the source).
 
-* Backup to remote drive?
-
-# LICENSE
+## LICENSE
 
 The MIT License (MIT)
 
-Copyright (c) 2013-2015 Laurent Cozic
+Copyright (c) 2013-2017 Laurent Cozic
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
